@@ -65,7 +65,7 @@ impl Dial {
     self.position = ((temporary_position).rem_euclid((self.max_number + 1) as i32)) as u32;
 
     let passed_zero_times = (temporary_position / (self.max_number as i32 + 1)).abs() as u32 
-      + if temporary_position <= 0 && before != 0 { 1 as u32 } else {0 as u32};
+      + if temporary_position <= 0 && before != 0 {1} else {0};
 
     (self.position, passed_zero_times)
   }
