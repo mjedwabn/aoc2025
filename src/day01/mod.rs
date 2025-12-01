@@ -62,7 +62,7 @@ impl Dial {
   fn rotate(&mut self, distance: i32) -> (u32, u32) {
     let before = self.position;
     let temporary_position = self.position as i32 + distance;
-    self.position = ((temporary_position).rem_euclid((self.max_number + 1) as i32)) as u32;
+    self.position = temporary_position.rem_euclid(self.max_number as i32 + 1) as u32;
 
     let passed_zero_times = (temporary_position / (self.max_number as i32 + 1)).abs() as u32 
       + if temporary_position <= 0 && before != 0 {1} else {0};
