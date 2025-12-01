@@ -32,8 +32,7 @@ fn how_many_times_did_dial_passed_zero(rotations: &Vec<i32>) -> u32 {
 
 fn parse_input(lines: Vec<String>) -> Vec<i32> {
   fn parse_rotation(line: &str) -> i32 {
-    let chars = line.chars().collect_vec();
-    let direction = chars.get(0).unwrap();
+    let direction = *line.chars().collect_vec().get(0).unwrap();
     let distance: i32 = line[1..].parse().unwrap();
 
     match direction {
