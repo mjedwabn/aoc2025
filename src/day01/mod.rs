@@ -18,10 +18,10 @@ pub fn what_is_the_password_to_open_the_door_using_password_method(
 ) -> u32 {
   let rotations = parse_input(crate::read_input(input));
 
-  how_many_times_did_dial_passed_zero(&rotations)
+  how_many_times_did_dial_pass_zero(&rotations)
 }
 
-fn how_many_times_did_dial_passed_zero(rotations: &Vec<i32>) -> u32 {
+fn how_many_times_did_dial_pass_zero(rotations: &Vec<i32>) -> u32 {
   let mut dial = Dial::new();
   rotations
     .iter()
@@ -128,8 +128,8 @@ mod tests {
 
   #[test]
   fn count_passed_zero_multiple_rotations() {
-    assert_eq!(super::how_many_times_did_dial_passed_zero(&vec![-50, 1]), 1);
-    assert_eq!(super::how_many_times_did_dial_passed_zero(&vec![-50, -1]), 1);
+    assert_eq!(super::how_many_times_did_dial_pass_zero(&vec![-50, 1]), 1);
+    assert_eq!(super::how_many_times_did_dial_pass_zero(&vec![-50, -1]), 1);
   }
 
   #[test]
