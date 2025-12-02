@@ -1,6 +1,7 @@
 use std::{fs::File, io::{BufRead, BufReader}};
 
 pub mod day01;
+pub mod day02;
 
 pub fn read_input(input: &mut dyn BufRead) -> Vec<String> {
   input
