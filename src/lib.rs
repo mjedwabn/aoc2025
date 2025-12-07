@@ -1,6 +1,10 @@
 #![allow(dead_code)]
 
-use std::{fs::File, io::{BufRead, BufReader}, ops};
+use std::{
+  fs::File,
+  io::{BufRead, BufReader},
+  ops,
+};
 
 use itertools::Itertools;
 
@@ -10,6 +14,7 @@ pub mod day03;
 pub mod day04;
 pub mod day05;
 pub mod day06;
+pub mod day07;
 
 pub fn read_input(input: &mut dyn BufRead) -> Vec<String> {
   input
@@ -21,7 +26,6 @@ pub fn read_input(input: &mut dyn BufRead) -> Vec<String> {
 pub fn read(file_name: &str) -> BufReader<File> {
   BufReader::new(File::open(file_name).unwrap())
 }
-
 
 #[derive(Clone)]
 pub struct CartesianGrid<T> {
@@ -42,7 +46,7 @@ impl Coords {
   pub fn new(x: usize, y: usize) -> Self {
     Self { 0: x, 1: y }
   }
-  
+
   fn sub_x(&self, v: i32) -> ICoords {
     ICoords::new(self.0 as isize - v as isize, self.1 as isize)
   }
@@ -62,8 +66,7 @@ impl Coords {
 
 impl GridCoords for Coords {
   fn in_grid<T>(&self, grid: &CartesianGrid<T>) -> bool {
-    self.1 < grid.grid.len()
-      && self.0 < grid.grid.get(self.1).unwrap().len()
+    self.1 < grid.grid.len() && self.0 < grid.grid.get(self.1).unwrap().len()
   }
 }
 
@@ -82,14 +85,16 @@ impl ICoords {
   }
 
   pub fn rem_euclid(&self, x: usize, y: usize) -> Coords {
-    Coords::new(self.0.rem_euclid(x as isize) as usize, self.1.rem_euclid(y as isize) as usize)
+    Coords::new(
+      self.0.rem_euclid(x as isize) as usize,
+      self.1.rem_euclid(y as isize) as usize,
+    )
   }
-  
+
   fn to_coords(&self) -> Option<Coords> {
     if self.0 >= 0 && self.1 >= 0 {
       Some(Coords::new(self.0 as usize, self.1 as usize))
-    }
-    else {
+    } else {
       None
     }
   }
@@ -245,6 +250,12 @@ impl<T: std::fmt::Display + std::cmp::PartialEq> CartesianGrid<T> {
       .collect()
   }
 
+  fn coords_at_y(&self, y: usize) -> Vec<Coords> {
+    (0..self.grid.get(y).unwrap().len())
+      .map(|x| Coords::new(x, y))
+      .collect()
+  }
+
   fn get(&self, coord: &Coords) -> &T {
     self.grid.get(coord.1).unwrap().get(coord.0).unwrap()
   }
@@ -282,23 +293,29 @@ impl<T: std::fmt::Display + std::cmp::PartialEq> CartesianGrid<T> {
     if dx == 0 {
       if dy < 0 {
         (from.1..to.1).map(|y| Coords(from.1, y)).collect_vec()
+      } else {
+        (to.1 + 1..=from.1)
+          .map(|y| Coords(from.1, y))
+          .rev()
+          .collect_vec()
       }
-      else {
-        (to.1 + 1..=from.1).map(|y| Coords(from.1, y)).rev().collect_vec()
-      }
-    }
-    else if dy == 0 {
+    } else if dy == 0 {
       if dx < 0 {
-        (from.0..to.0).map(|x| Coords(x, from.1)).collect_vec()  
+        (from.0..to.0).map(|x| Coords(x, from.1)).collect_vec()
+      } else {
+        (to.0 + 1..=from.0)
+          .map(|x| Coords(x, from.1))
+          .rev()
+          .collect_vec()
       }
-      else {
-        (to.0 + 1..=from.0).map(|x| Coords(x, from.1)).rev().collect_vec()
-      }
-    }
-    else {
+    } else {
       // TODO: diagonals
       vec![]
     }
+  }
+
+  fn height(&self) -> usize {
+    self.grid.len()
   }
 
   fn print(&self) {
