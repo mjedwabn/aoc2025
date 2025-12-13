@@ -15,6 +15,7 @@ pub mod day04;
 pub mod day05;
 pub mod day06;
 pub mod day07;
+pub mod day08;
 
 pub fn read_input(input: &mut dyn BufRead) -> Vec<String> {
   input
