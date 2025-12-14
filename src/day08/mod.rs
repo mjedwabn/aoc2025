@@ -7,50 +7,10 @@ use crate::read_input;
 pub fn multiplied_three_largest_circuits(input: &mut dyn BufRead, n: usize) -> usize {
   let lines = read_input(input);
   let boxes = parse_junction_boxes(&lines);
-
-  let connections = boxes
-    .iter()
-    .enumerate()
-    .flat_map(|(bi, b)| {
-      let m = boxes
-        .iter()
-        .enumerate()
-        .filter(move |(bbi, _)| *bbi > bi)
-        .map(|(_, &bb)| {
-          (
-            (Connection { a: *b, b: bb }),
-            (((b.x as isize - bb.x as isize).abs().pow(2)
-              + (b.y as isize - bb.y as isize).abs().pow(2)
-              + (b.z as isize - bb.z as isize).abs().pow(2)) as f32)
-              .sqrt(),
-          )
-        });
-      m
-    })
-    .sorted_by(|a, b| a.1.total_cmp(&b.1))
-    .collect_vec();
-
-  let circuits = make_circuits(&connections, n);
-
-  let mut merged = true;
-  let mut merged_circuits = circuits;
-
-  while merged {
-    let before = merged_circuits.len();
-    merged_circuits = merge_circuits(&merged_circuits);
-    merged = before != merged_circuits.len();
-  }
-
-  let lonely_boxes = boxes
-    .iter()
-    .filter(|b| !merged_circuits.iter().any(|c| c.contains(&b)))
-    .collect_vec();
-
-  for b in lonely_boxes {
-    let mut circuit = HashSet::new();
-    circuit.insert(*b);
-    merged_circuits.push(circuit);
-  }
+  let connections = make_connections(&boxes);
+  let available_connections = &connections[..n];
+  let circuits = make_circuits(available_connections, vec![]);
+  let merged_circuits = merge_circuits(circuits);
 
   merged_circuits
     .iter()
@@ -60,11 +20,51 @@ pub fn multiplied_three_largest_circuits(input: &mut dyn BufRead, n: usize) -> u
     .fold(1, |acc, n| acc * n.len())
 }
 
-fn make_circuits(connections: &Vec<(Connection, f32)>, n: usize) -> Vec<HashSet<JunctionBox>> {
-  let mut circuits: Vec<HashSet<JunctionBox>> = Vec::new();
-  let available_connections = &connections[..n];
+pub fn multipied_x_coords_of_last_two_junction_boxes(input: &mut dyn BufRead) -> usize {
+  let lines = read_input(input);
+  let boxes = parse_junction_boxes(&lines);
+  let connections = make_connections(&boxes);
+  let mut circuits = boxes.iter().map(|b| Circuit::from([*b])).collect_vec();
 
-  for (conn, _) in available_connections.iter() {
+  for c in connections {
+    circuits = make_circuits(&[c.clone()], circuits);
+    circuits = merge_circuits(circuits);
+
+    if circuits.len() == 1 {
+      return c.a.x * c.b.x;
+    }
+  }
+  0
+}
+
+fn make_connections(boxes: &Vec<JunctionBox>) -> Vec<Connection> {
+  boxes
+    .iter()
+    .enumerate()
+    .flat_map(|(ai, a)| {
+      boxes
+        .iter()
+        .enumerate()
+        .filter(move |(bi, _)| *bi > ai)
+        .map(|(_, &b)| {
+          (
+            (Connection { a: *a, b }),
+            (((a.x as isize - b.x as isize).abs().pow(2)
+              + (a.y as isize - b.y as isize).abs().pow(2)
+              + (a.z as isize - b.z as isize).abs().pow(2)) as f32)
+              .sqrt(),
+          )
+        })
+    })
+    .sorted_by(|a, b| a.1.total_cmp(&b.1))
+    .map(|c| c.0)
+    .collect_vec()
+}
+
+fn make_circuits(connections: &[Connection], initial_circuits: Vec<Circuit>) -> Vec<Circuit> {
+  let mut circuits: Vec<Circuit> = initial_circuits;
+
+  for conn in connections.iter() {
     if let Some(circuit) = circuits
       .iter_mut()
       .filter(|c| !(c.contains(&conn.a) && c.contains(&conn.b)))
@@ -73,43 +73,53 @@ fn make_circuits(connections: &Vec<(Connection, f32)>, n: usize) -> Vec<HashSet<
       circuit.insert(conn.a);
       circuit.insert(conn.b);
     } else {
-      let mut circuit: HashSet<JunctionBox> = HashSet::new();
-      circuit.insert(conn.a);
-      circuit.insert(conn.b);
-      circuits.push(circuit);
+      circuits.push(Circuit::from([conn.a, conn.b]));
     }
   }
 
   circuits
 }
 
-fn merge_circuits(circuits: &Vec<HashSet<JunctionBox>>) -> Vec<HashSet<JunctionBox>> {
-  let mut merged = circuits.clone();
-  let mut to_remove: Vec<usize> = vec![];
+fn merge_circuits(circuits: Vec<Circuit>) -> Vec<Circuit> {
+  let mut merged = true;
+  let mut merged_circuits = circuits;
+
+  while merged {
+    let before = merged_circuits.len();
+    merged_circuits = merge_once(merged_circuits);
+    merged = before != merged_circuits.len();
+  }
+
+  merged_circuits
+}
+
+fn merge_once(circuits: Vec<Circuit>) -> Vec<Circuit> {
+  let mut merged = circuits;
+  let mut to_remove: HashSet<usize> = HashSet::new();
 
   for c1 in 0..merged.len() {
-    for c2 in 0..merged.len() {
-      if c2 > c1 {
-        for j1 in merged[c1].clone() {
-          if merged[c2].contains(&j1) {
-            let circuit = merged[c2].clone();
-            for j in circuit {
-              merged[c1].insert(j);
-              to_remove.push(c2);
-            }
-            continue;
+    'inner: for c2 in c1 + 1..merged.len() {
+      if to_remove.contains(&c2) {
+        continue;
+      }
+      for j1 in merged[c1].iter() {
+        if merged[c2].contains(&j1) {
+          let circuit = merged[c2].clone();
+          for j in circuit {
+            merged[c1].insert(j);
+            to_remove.insert(c2);
           }
+          continue 'inner;
         }
       }
     }
   }
 
+  for r in to_remove.iter().sorted().rev() {
+    merged.remove(*r);
+  }
+
   merged
-    .iter()
-    .enumerate()
-    .filter(|(i, _)| !to_remove.contains(i))
-    .map(|(_, c)| c.clone())
-    .collect_vec()
 }
 
 fn parse_junction_boxes(lines: &Vec<String>) -> Vec<JunctionBox> {
@@ -131,17 +141,23 @@ struct JunctionBox {
   z: usize,
 }
 
+#[derive(Clone, Copy)]
 struct Connection {
   a: JunctionBox,
   b: JunctionBox,
 }
 
+type Circuit = HashSet<JunctionBox>;
+
 #[cfg(test)]
 mod tests {
-  use crate::{day08::multiplied_three_largest_circuits, read};
+  use crate::{
+    day08::{multipied_x_coords_of_last_two_junction_boxes, multiplied_three_largest_circuits},
+    read,
+  };
 
   #[test]
-  fn sample_part1_part() {
+  fn sample_part1_input() {
     assert_eq!(
       multiplied_three_largest_circuits(&mut read("./src/day08/sample.input"), 10),
       40
@@ -149,10 +165,26 @@ mod tests {
   }
 
   #[test]
-  fn my_part1_part() {
+  fn my_part1_input() {
     assert_eq!(
       multiplied_three_largest_circuits(&mut read("./src/day08/my.input"), 1000),
       244188
+    );
+  }
+
+  #[test]
+  fn sample_part2_input() {
+    assert_eq!(
+      multipied_x_coords_of_last_two_junction_boxes(&mut read("./src/day08/sample.input")),
+      25272
+    );
+  }
+
+  #[test]
+  fn my_part2_input() {
+    assert_eq!(
+      multipied_x_coords_of_last_two_junction_boxes(&mut read("./src/day08/my.input")),
+      8361881885
     );
   }
 }
