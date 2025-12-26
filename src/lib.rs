@@ -16,6 +16,7 @@ pub mod day05;
 pub mod day06;
 pub mod day07;
 pub mod day08;
+pub mod day09;
 
 pub fn read_input(input: &mut dyn BufRead) -> Vec<String> {
   input
@@ -281,6 +282,15 @@ impl<T: std::fmt::Display + std::cmp::PartialEq> CartesianGrid<T> {
       .iter()
       .find(|c| *self.get(c) == value)
       .map(|c| *c)
+  }
+
+  fn find_coords(&self, value: T) -> Vec<Coords> {
+    self
+      .coords()
+      .iter()
+      .filter(|c| *self.get(c) == value)
+      .map(|c| *c)
+      .collect_vec()
   }
 
   fn set(&mut self, coord: &Coords, value: T) {
