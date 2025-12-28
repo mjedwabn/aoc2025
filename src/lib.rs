@@ -17,6 +17,7 @@ pub mod day06;
 pub mod day07;
 pub mod day08;
 pub mod day09;
+pub mod day10;
 
 pub fn read_input(input: &mut dyn BufRead) -> Vec<String> {
   input
@@ -347,5 +348,18 @@ impl CartesianGrid<char> {
       .collect::<Vec<Vec<char>>>();
 
     CartesianGrid { grid }
+  }
+}
+
+trait RemoveFirst<T> {
+  fn remove_first(&mut self) -> Option<T>;
+}
+
+impl<T> RemoveFirst<T> for Vec<T> {
+  fn remove_first(&mut self) -> Option<T> {
+    if self.is_empty() {
+      return None;
+    }
+    Some(self.remove(0))
   }
 }
